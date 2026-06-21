@@ -64,3 +64,32 @@ docker-compose.yml
 - ❌ multi-region / sharding — over-engineer
 
 > ถ้า planner เสนอ router/auth ตอน plan แล้วคุณ approve → มันจะกลายเป็น decision ที่ค่อย pin ลง CLAUDE.md ทีหลังได้
+
+---
+
+## Claude automation — gaps พบในรัน issue #7
+
+ค้นพบระหว่างรัน issue #7 (หลัง PR #8 merge เข้า main):
+
+### Gap 1: Claude อ่าน GitHub issue ไม่ได้
+
+`gh issue view` / `gh issue list` ไม่ได้อยู่ใน allowed tools → Claude ไม่เห็น issue body ใน CI run
+
+**แก้:** เพิ่ม `Bash(gh issue view:*)` และ `Bash(gh issue list:*)` ใน:
+1. `.github/workflows/claude.yml` → `claude_args --allowedTools`
+2. `.claude/settings.json` → `allow` list (สำหรับ local interactive use)
+
+เพิ่มเติม — inject issue body ลงใน `prompt:` ตรงๆ สำหรับ trigger `issues: assigned`:
+```yaml
+prompt: |
+  ${{ github.event.action == 'assigned' && format('Issue #{0}: {1}\n\n{2}\n\nImplement via claude/issue-{0} branch, open PR "Closes #{0}".', github.event.issue.number, github.event.issue.title, github.event.issue.body) || 'Implement the triggering comment request. Create branch claude/issue-<n>, commit, push, open PR.' }}
+```
+
+### Gap 2: Claude push workflow file ไม่ได้
+
+GitHub App token (`ghs_*`) ไม่มี `workflows` permission → push ที่แตะ `.github/workflows/*` ถูก reject
+
+**แก้ (admin action):** ใน GitHub App installation settings → เพิ่ม Workflows (read & write) permission
+หรือ ใช้ PAT ที่มี `workflow` scope ใน `actions/checkout@v4` (`token:` input)
+
+**สถานะ issue #7:** ยัง implement ไม่ได้เพราะอ่าน issue body ไม่ได้ — หลัง apply fix แล้ว ให้ re-assign issue #7 ให้ `claude[bot]` อีกครั้ง
