@@ -27,9 +27,14 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # issue_comment ไม่ auto-push/PR ให้ — ต้อง allow git + gh เอง ไม่งั้น Claude
+          # แก้ไฟล์ใน runner แล้ว workspace ถูกทิ้ง ไม่มี branch/PR ออกมา
+          claude_args: |
+            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*)"
           # บังคับให้ทุก run จบด้วยการเปิด PR เอง (ไม่ใช่แค่ push branch)
           prompt: |
             Implement the request from the triggering issue or comment, following the
             repo's CLAUDE.md and nested apps/<service>/CLAUDE.md conventions.
-            When done, push your branch and OPEN A PULL REQUEST targeting main,
+            When done, create a new branch (e.g. claude/issue-<n>), commit your changes,
+            push the branch, and OPEN A PULL REQUEST targeting main with `gh pr create`,
             with a body that references the issue (e.g. "Closes #<n>").
