@@ -6,13 +6,6 @@
       "env": {
         "OPENAI_API_KEY": "<ใส่ผ่าน env หรือ secret manager — อย่า commit ค่าจริง>"
       }
-    },
-    "ollama-local": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-ollama"],
-      "env": {
-        "OLLAMA_HOST": "<http://localhost:11434 — local model สำหรับโค้ด sensitive ที่ห้ามออก org>"
-      }
     }
   }
 }
