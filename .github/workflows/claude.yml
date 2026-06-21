@@ -29,12 +29,15 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # issue_comment ไม่ auto-push/PR ให้ — ต้อง allow git + gh เอง ไม่งั้น Claude
           # แก้ไฟล์ใน runner แล้ว workspace ถูกทิ้ง ไม่มี branch/PR ออกมา
+          # gh issue view ต้อง allow ด้วย ไม่งั้น run ที่มาจาก comment อ่าน issue body ไม่ได้
           claude_args: |
-            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*)"
+            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh issue view:*)"
           # บังคับให้ทุก run จบด้วยการเปิด PR เอง (ไม่ใช่แค่ push branch)
+          # assigned: inject issue body ตรง ๆ กันพลาด / comment: ให้ไปอ่าน issue เอง
           prompt: |
-            Implement the request from the triggering issue or comment, following the
-            repo's CLAUDE.md and nested apps/<service>/CLAUDE.md conventions.
+            ${{ github.event.action == 'assigned' && format('Implement issue #{0} ({1}). Run `gh issue view {0}` to read the full body and acceptance criteria.', github.event.issue.number, github.event.issue.title) || 'Implement the request from the triggering comment. Run `gh issue view <n>` on the linked issue to read the full requirements.' }}
+
+            Follow the repo's CLAUDE.md and nested apps/<service>/CLAUDE.md conventions.
             When done, create a new branch (e.g. claude/issue-<n>), commit your changes,
             push the branch, and OPEN A PULL REQUEST targeting main with `gh pr create`,
             with a body that references the issue (e.g. "Closes #<n>").
