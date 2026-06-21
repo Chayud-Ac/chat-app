@@ -1,17 +1,15 @@
 # .github/CODEOWNERS — human gate ที่ "ถูกจุด" (แก้ P6)
 # monorepo: ใช้ path ของ folder ใน apps/ — 1 ไฟล์คุมทั้ง repo
 # เปิด "Require review from Code Owners" ใน branch protection ของ main ด้วย ไม่งั้น rule นี้ไม่บังคับ
+# personal repo: ใช้ @Chayud-Ac ทุกบรรทัด (พอมีทีมจริงค่อยแยกเป็น team)
 
-# ทั้ง ai-service แตะ PII/prompt/model → ทุก PR ต้องผ่าน security-team
-/apps/ai-service/           @yourorg/security-team
+# ai-service แตะ PII/prompt/model
+/apps/ai-service/                 @Chayud-Ac
 
 # auth/payment ใน backend = sensitive
-/apps/backend/internal/auth/      @yourorg/security-team
-/apps/backend/internal/payment/   @yourorg/security-team
+/apps/backend/internal/auth/      @Chayud-Ac
+/apps/backend/internal/payment/   @Chayud-Ac
 
 # infra / data contract ที่กระทบหลาย service
-/infra/                     @yourorg/platform-team
-/packages/contracts/        @yourorg/platform-team @yourorg/security-team
-
-# default reviewer ของส่วนที่เหลือ (ปรับตามจริง)
-# *                         @yourorg/dev-team
+/infra/                           @Chayud-Ac
+/packages/contracts/              @Chayud-Ac
