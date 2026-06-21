@@ -1,0 +1,28 @@
+# .github/workflows/ci-python.yml — Python (apps/ai-service + apps/worker)
+# matrix ยิงทั้งสอง service; paths filter ยิงเฉพาะตอน python service หรือ contract เปลี่ยน
+name: CI python
+
+on:
+  push:
+    paths: ['apps/ai-service/**', 'apps/worker/**', 'packages/contracts/**']
+  pull_request:
+    paths: ['apps/ai-service/**', 'apps/worker/**', 'packages/contracts/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [ai-service, worker]
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: ruff check .
+      - run: mypy .
+      - run: pytest

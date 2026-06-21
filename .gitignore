@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# python
+__pycache__/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# go build output
+bin/
+
+# build artifacts
+dist/
+
+# next.js
+.next/
+
+# local sqlite
+*.sqlite

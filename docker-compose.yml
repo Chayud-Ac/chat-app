@@ -1,0 +1,42 @@
+# local dev infra — Postgres (+pgvector) + Redis
+# วางเป็น docker-compose.yml ที่ repo root; รัน: docker compose up -d
+# ดู stack-decisions.md: Postgres = primary DB + pgvector, Redis = Asynq queue + cache
+
+services:
+  postgres:
+    # pgvector image = Postgres + extension พร้อมใช้ (ไม่ต้อง build เอง)
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chat
+      POSTGRES_DB: chat
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:
+
+# หลัง up:
+#   - เปิด pgvector extension ครั้งแรก: docker compose exec postgres psql -U chat -c "CREATE EXTENSION IF NOT EXISTS vector;"
+#   - DATABASE_URL=postgres://chat:chat@localhost:5432/chat?sslmode=disable
+#   - REDIS_ADDR=localhost:6379
