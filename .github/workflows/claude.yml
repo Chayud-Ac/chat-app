@@ -21,6 +21,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      id-token: write   # claude-code-action ใช้ OIDC ตอน setup — ขาดอันนี้ run จะ fail
     steps:
       - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@v1
