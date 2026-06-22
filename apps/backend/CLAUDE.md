@@ -25,6 +25,7 @@ API gateway: auth, session, orchestrate ไป ai-service, stream กลับ c
 ### house style ที่ skill ไม่ครอบ (เฉพาะ repo นี้)
 - **package-per-domain**: จัด `internal/` ตาม domain (`internal/chat/`, `internal/session/`) ไม่ใช่ตาม technical layer
 - **routes แยกจาก handlers**: นิยาม route/wiring ไว้คนละไฟล์กับ handler logic (เช่น `routes.go` ↔ `handlers.go`)
+- **HTTP response helper รวมที่เดียว**: ใช้ `internal/platform/httputil` (`WriteJSON`, `WriteError`) — **ห้าม** re-roll `json.NewEncoder` หรือนิยาม `writeJSON`/`writeError` ซ้ำในแต่ละ domain package
 - **ห้าม log PII** (ข้อความ user, token, email) — มี hook block อยู่
 - `internal/auth/` และ `internal/payment/` = sensitive ทุก PR ต้องผ่าน CODEOWNERS review
 - **HTTP request/response schema** + **queue job payload** (ที่ enqueue ให้ worker) import จาก `packages/contracts/` — producer/consumer ใช้ตัวเดียวกัน

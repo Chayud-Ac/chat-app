@@ -11,6 +11,7 @@ AI chat application — 1 repo, 4 service ใน `apps/` (frontend/backend/ai-se
 - **ห้าม log/ส่งออก PII** (ข้อความ user, token, email) ทุก service
 - nested `CLAUDE.md` ใน `apps/<service>/` ให้ context เฉพาะ service นั้นเพิ่มอัตโนมัติ
 - **ก่อนเขียน/แก้โค้ดทุกครั้ง ใช้ skill `anti-slop`** (no over-engineering, no orthogonal changes, verify จริง)
+- **ก่อน dispatch issue ให้ background/async agent ใช้ skill `agent-dev-flow`** (route-by-difficulty + `--max-turns` กัน loop burn token; งานกำกวม/heavy → interactive)
 - review ก่อน PR: `code-reviewer` (ทุก service) + `ai-reviewer` (เฉพาะ ai-service) + `contract-guardian` (เฉพาะ contracts) — แยก scope ไม่ทับกัน
 
 ## map service (data flow)

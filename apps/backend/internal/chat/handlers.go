@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Chayud-Ac/chat-app/apps/backend/internal/platform/httputil"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -23,19 +24,19 @@ func NewHandlers(svc *Service) *Handlers {
 func (h *Handlers) createConversation(w http.ResponseWriter, r *http.Request) {
 	conv, err := h.svc.CreateConversation(r.Context())
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "could not create conversation", err)
+		httputil.WriteError(w, r, http.StatusInternalServerError, "could not create conversation", err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, conv)
+	httputil.WriteJSON(w, http.StatusCreated, conv)
 }
 
 func (h *Handlers) listConversations(w http.ResponseWriter, r *http.Request) {
 	convs, err := h.svc.ListConversations(r.Context())
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "could not list conversations", err)
+		httputil.WriteError(w, r, http.StatusInternalServerError, "could not list conversations", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, convs)
+	httputil.WriteJSON(w, http.StatusOK, convs)
 }
 
 func (h *Handlers) getConversation(w http.ResponseWriter, r *http.Request) {
@@ -45,19 +46,19 @@ func (h *Handlers) getConversation(w http.ResponseWriter, r *http.Request) {
 	}
 	conv, err := h.svc.GetConversation(r.Context(), id)
 	if errors.Is(err, ErrConversationNotFound) {
-		writeError(w, r, http.StatusNotFound, "conversation not found", err)
+		httputil.WriteError(w, r, http.StatusNotFound, "conversation not found", err)
 		return
 	}
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "could not get conversation", err)
+		httputil.WriteError(w, r, http.StatusInternalServerError, "could not get conversation", err)
 		return
 	}
 	msgs, err := h.svc.Messages(r.Context(), id)
 	if err != nil {
-		writeError(w, r, http.StatusInternalServerError, "could not load messages", err)
+		httputil.WriteError(w, r, http.StatusInternalServerError, "could not load messages", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"conversation": conv, "messages": msgs})
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{"conversation": conv, "messages": msgs})
 }
 
 type sendMessageRequest struct {
@@ -72,21 +73,21 @@ func (h *Handlers) sendMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	var req sendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, r, http.StatusBadRequest, "invalid json", err)
+		httputil.WriteError(w, r, http.StatusBadRequest, "invalid json", err)
 		return
 	}
 	if req.Content == "" {
-		writeError(w, r, http.StatusBadRequest, "content is required", nil)
+		httputil.WriteError(w, r, http.StatusBadRequest, "content is required", nil)
 		return
 	}
 	if len(req.Content) > maxContentLen {
-		writeError(w, r, http.StatusBadRequest, "content too long", nil)
+		httputil.WriteError(w, r, http.StatusBadRequest, "content too long", nil)
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		writeError(w, r, http.StatusInternalServerError, "streaming unsupported", nil)
+		httputil.WriteError(w, r, http.StatusInternalServerError, "streaming unsupported", nil)
 		return
 	}
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -115,23 +116,10 @@ func (h *Handlers) sendMessage(w http.ResponseWriter, r *http.Request) {
 func parseID(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "invalid conversation id", err)
+		httputil.WriteError(w, r, http.StatusBadRequest, "invalid conversation id", err)
 		return uuid.Nil, false
 	}
 	return id, true
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, r *http.Request, status int, msg string, err error) {
-	if err != nil {
-		slog.ErrorContext(r.Context(), "chat http error", "status", status, "err", err)
-	}
-	writeJSON(w, status, map[string]string{"error": msg})
 }
 
 func writeChunk(w http.ResponseWriter, chunk any) {
