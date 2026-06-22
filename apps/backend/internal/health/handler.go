@@ -2,8 +2,9 @@ package health
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
+
+	"github.com/Chayud-Ac/chat-app/apps/backend/internal/platform/httputil"
 )
 
 type DBPinger interface {
@@ -43,7 +44,5 @@ func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusServiceUnavailable
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(resp) //nolint:errcheck
+	httputil.WriteJSON(w, status, resp)
 }
