@@ -24,7 +24,7 @@ func (r *Redis) Ping(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("connect redis: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	if _, err := fmt.Fprint(conn, "PING\r\n"); err != nil {
 		return fmt.Errorf("write ping: %w", err)

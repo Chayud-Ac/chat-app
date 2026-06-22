@@ -28,7 +28,7 @@ func (d *DB) Ping(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("connect postgres: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// SSLRequest message: length=8, code=80877103 (0x04D2162F)
 	if _, err := conn.Write([]byte{0, 0, 0, 8, 4, 210, 22, 47}); err != nil {
