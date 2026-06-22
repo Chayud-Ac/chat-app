@@ -14,6 +14,7 @@ UI ของ AI chat app: render streaming token ทีละ chunk จาก ba
 
 ## Conventions
 - **stack/pattern เชิงลึก → ใช้ skill `frontend-stack`** (Next.js server-first, Tailwind v4 token, shadcn AI Elements, AI SDK v5) — โหลดอัตโนมัติเมื่อทำงานที่นี่
+- **file placement**: `app/` = routing เท่านั้น (`page.tsx`/`layout.tsx`/`route.ts`). reusable component → `components/`, ไม่ใช่ลอย ๆ ใน `app/`. (โครงเต็ม + private-folder ดู skill `frontend-stack`)
 - กัน XSS ตอน render markdown จาก LLM output
 - type ของ request/response import จาก `packages/contracts/`
 
