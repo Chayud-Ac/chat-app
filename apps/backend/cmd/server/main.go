@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 
 	repo "github.com/Chayud-Ac/chat-app/apps/backend/internal/adapters/postgresql/sqlc"
 	"github.com/Chayud-Ac/chat-app/apps/backend/internal/chat"
@@ -46,6 +47,11 @@ func main() {
 	chatSvc := chat.NewService(repo.New(pool), chat.NewAnthropicStreamer(cfg.AnthropicAPIKey, cfg.AnthropicModel))
 
 	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: cfg.CORSAllowedOrigins,
+		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+		AllowedHeaders: []string{"Content-Type"},
+	}))
 	health.Register(r, health.NewHandler(db, rdb))
 	chat.Register(r, chat.NewHandlers(chatSvc))
 
