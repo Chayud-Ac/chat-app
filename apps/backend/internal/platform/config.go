@@ -6,9 +6,10 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	RedisAddr   string
-	Port        string
+	DatabaseURL     string
+	RedisAddr       string
+	AnthropicAPIKey string
+	Port            string
 }
 
 func LoadConfig() (*Config, error) {
@@ -20,13 +21,18 @@ func LoadConfig() (*Config, error) {
 	if redisAddr == "" {
 		return nil, fmt.Errorf("REDIS_ADDR is required")
 	}
+	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+	if anthropicKey == "" {
+		return nil, fmt.Errorf("ANTHROPIC_API_KEY is required")
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	return &Config{
-		DatabaseURL: dbURL,
-		RedisAddr:   redisAddr,
-		Port:        port,
+		DatabaseURL:     dbURL,
+		RedisAddr:       redisAddr,
+		AnthropicAPIKey: anthropicKey,
+		Port:            port,
 	}, nil
 }

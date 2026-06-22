@@ -10,6 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
+	repo "github.com/Chayud-Ac/chat-app/apps/backend/internal/adapters/postgresql/sqlc"
+	"github.com/Chayud-Ac/chat-app/apps/backend/internal/chat"
 	"github.com/Chayud-Ac/chat-app/apps/backend/internal/health"
 	"github.com/Chayud-Ac/chat-app/apps/backend/internal/platform"
 )
@@ -21,24 +25,34 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	db, err := platform.NewDB(cfg.DatabaseURL)
 	if err != nil {
 		slog.Error("db", "err", err)
 		os.Exit(1)
 	}
 
+	pool, err := platform.NewPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("pgxpool", "err", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
 	rdb := platform.NewRedis(cfg.RedisAddr)
 
-	mux := http.NewServeMux()
-	health.Register(mux, health.NewHandler(db, rdb))
+	chatSvc := chat.NewService(repo.New(pool), chat.NewAnthropicStreamer(cfg.AnthropicAPIKey))
+
+	r := chi.NewRouter()
+	health.Register(r, health.NewHandler(db, rdb))
+	chat.Register(r, chat.NewHandlers(chatSvc))
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: r,
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	go func() {
 		slog.Info("server listening", "port", cfg.Port)

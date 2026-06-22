@@ -1,7 +1,7 @@
 package health
 
-import "net/http"
+import "github.com/go-chi/chi/v5"
 
-func Register(mux *http.ServeMux, h *Handler) {
-	mux.HandleFunc("GET /healthz", h.Healthz)
+func Register(r chi.Router, h *Handler) {
+	r.Get("/healthz", h.Healthz)
 }

@@ -97,6 +97,11 @@ func (s *Service) persistUserMessage(ctx context.Context, convID uuid.UUID, cont
 	return msgToDTO(row), nil
 }
 
+// Messages คืนข้อความทั้งหมดของ conversation (public wrapper ของ loadHistory สำหรับ handler).
+func (s *Service) Messages(ctx context.Context, convID uuid.UUID) ([]Message, error) {
+	return s.loadHistory(ctx, convID)
+}
+
 func (s *Service) loadHistory(ctx context.Context, convID uuid.UUID) ([]Message, error) {
 	rows, err := s.repo.ListMessages(ctx, toPGUUID(convID))
 	if err != nil {
