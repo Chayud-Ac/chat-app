@@ -1,8 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
-import { getConversation } from "@/lib/api";
+import { useState } from "react";
+import { getConversation, streamMessage } from "@/lib/api";
+import { conversationsKey } from "@/components/sidebar";
 import {
   Conversation,
   ConversationContent,
@@ -23,16 +25,54 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 
+// The in-flight turn: the user's just-sent message + the streaming assistant text.
+type StreamingTurn = {
+  userContent: string;
+  assistantText: string;
+};
+
 export function ChatView({ conversationId }: { conversationId: string }) {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["conversation", conversationId],
     queryFn: () => getConversation(conversationId),
   });
 
-  const messages = data?.messages ?? [];
+  const [turn, setTurn] = useState<StreamingTurn | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (_message: PromptInputMessage) => {
-    // Sending + SSE streaming is wired in Task 15.
+  const messages = data?.messages ?? [];
+  const isStreaming = turn !== null;
+
+  const handleSubmit = async (message: PromptInputMessage) => {
+    const content = message.text?.trim();
+    if (!content || isStreaming) return;
+
+    setError(null);
+    setTurn({ userContent: content, assistantText: "" });
+
+    try {
+      await streamMessage(conversationId, content, (chunk) => {
+        if (chunk.type === "delta") {
+          setTurn((prev) =>
+            prev ? { ...prev, assistantText: prev.assistantText + chunk.text } : prev
+          );
+        } else if (chunk.type === "error") {
+          setError(chunk.message);
+          setTurn(null); // assistant turn not persisted by backend
+        }
+        // "done" → both messages are now persisted; refetch handles render below.
+      });
+      // Stream finished: pull persisted history (user + assistant) and refresh list.
+      await queryClient.invalidateQueries({
+        queryKey: ["conversation", conversationId],
+      });
+      queryClient.invalidateQueries({ queryKey: conversationsKey });
+    } catch {
+      setError("Failed to send message");
+    } finally {
+      setTurn(null);
+    }
   };
 
   return (
@@ -47,7 +87,7 @@ export function ChatView({ conversationId }: { conversationId: string }) {
               Failed to load conversation
             </p>
           )}
-          {!isLoading && !isError && messages.length === 0 && (
+          {!isLoading && !isError && messages.length === 0 && !turn && (
             <ConversationEmptyState
               icon={<MessageSquare className="size-12" />}
               title="Start a conversation"
@@ -61,6 +101,21 @@ export function ChatView({ conversationId }: { conversationId: string }) {
               </MessageContent>
             </Message>
           ))}
+          {turn && (
+            <>
+              <Message from="user">
+                <MessageContent>
+                  <MessageResponse>{turn.userContent}</MessageResponse>
+                </MessageContent>
+              </Message>
+              <Message from="assistant">
+                <MessageContent>
+                  <MessageResponse>{turn.assistantText}</MessageResponse>
+                </MessageContent>
+              </Message>
+            </>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
@@ -71,7 +126,9 @@ export function ChatView({ conversationId }: { conversationId: string }) {
             <PromptInputTextarea placeholder="Say something…" />
           </PromptInputBody>
           <PromptInputFooter>
-            <PromptInputSubmit status="ready" />
+            <PromptInputSubmit
+              status={isStreaming ? "streaming" : "ready"}
+            />
           </PromptInputFooter>
         </PromptInput>
       </div>
