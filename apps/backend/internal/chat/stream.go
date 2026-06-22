@@ -14,14 +14,18 @@ type claudeStreamer interface {
 	Stream(ctx context.Context, history []Message, onDelta func(string)) (string, error)
 }
 
-// AnthropicStreamer เรียก Claude /v1/messages แบบ streaming (claude-opus-4-8).
+// AnthropicStreamer เรียก Claude /v1/messages แบบ streaming.
+// base URL มาจาก ANTHROPIC_BASE_URL env (SDK honor เอง) — ว่าง = Anthropic ตรง,
+// ใส่ = provider อื่นที่ Anthropic-compatible (เช่น DeepInfra).
 type AnthropicStreamer struct {
 	client anthropic.Client
+	model  anthropic.Model
 }
 
-func NewAnthropicStreamer(apiKey string) *AnthropicStreamer {
+func NewAnthropicStreamer(apiKey, model string) *AnthropicStreamer {
 	return &AnthropicStreamer{
 		client: anthropic.NewClient(option.WithAPIKey(apiKey)),
+		model:  anthropic.Model(model),
 	}
 }
 
@@ -37,7 +41,7 @@ func (a *AnthropicStreamer) Stream(ctx context.Context, history []Message, onDel
 	}
 
 	stream := a.client.Messages.NewStreaming(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.ModelClaudeOpus4_8,
+		Model:     a.model,
 		MaxTokens: 16000,
 		Messages:  msgs,
 	})

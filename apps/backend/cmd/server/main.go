@@ -43,7 +43,7 @@ func main() {
 
 	rdb := platform.NewRedis(cfg.RedisAddr)
 
-	chatSvc := chat.NewService(repo.New(pool), chat.NewAnthropicStreamer(cfg.AnthropicAPIKey))
+	chatSvc := chat.NewService(repo.New(pool), chat.NewAnthropicStreamer(cfg.AnthropicAPIKey, cfg.AnthropicModel))
 
 	r := chi.NewRouter()
 	health.Register(r, health.NewHandler(db, rdb))

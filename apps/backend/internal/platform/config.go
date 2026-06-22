@@ -9,6 +9,7 @@ type Config struct {
 	DatabaseURL     string
 	RedisAddr       string
 	AnthropicAPIKey string
+	AnthropicModel  string
 	Port            string
 }
 
@@ -25,6 +26,12 @@ func LoadConfig() (*Config, error) {
 	if anthropicKey == "" {
 		return nil, fmt.Errorf("ANTHROPIC_API_KEY is required")
 	}
+	// ว่าง = Anthropic ตรง. ตั้ง ANTHROPIC_MODEL=anthropic/claude-opus-4-8 เมื่อใช้ DeepInfra
+	// (คู่กับ ANTHROPIC_BASE_URL ที่ SDK honor เอง).
+	anthropicModel := os.Getenv("ANTHROPIC_MODEL")
+	if anthropicModel == "" {
+		anthropicModel = "claude-opus-4-8"
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -33,6 +40,7 @@ func LoadConfig() (*Config, error) {
 		DatabaseURL:     dbURL,
 		RedisAddr:       redisAddr,
 		AnthropicAPIKey: anthropicKey,
+		AnthropicModel:  anthropicModel,
 		Port:            port,
 	}, nil
 }
