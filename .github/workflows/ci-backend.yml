@@ -21,6 +21,7 @@ jobs:
           go-version: '1.25'
       - run: go vet ./...
       - run: go test ./... -race -cover
-      - uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: apps/backend
+      # install golangci-lint with the runner's Go (1.25) so it isn't built with
+      # an older Go than go.mod targets — golangci-lint-action@v6 ships a 1.24 binary
+      - run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.0
+      - run: golangci-lint run
