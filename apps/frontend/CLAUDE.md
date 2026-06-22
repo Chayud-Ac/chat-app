@@ -16,3 +16,7 @@ UI ของ AI chat app: render streaming token ทีละ chunk จาก ba
 - **stack/pattern เชิงลึก → ใช้ skill `frontend-stack`** (Next.js server-first, Tailwind v4 token, shadcn AI Elements, AI SDK v5) — โหลดอัตโนมัติเมื่อทำงานที่นี่
 - กัน XSS ตอน render markdown จาก LLM output
 - type ของ request/response import จาก `packages/contracts/`
+
+## ⚠️ Next.js 16 — breaking changes
+This repo uses **Next.js 16** (App Router + Turbopack). APIs/conventions may differ from training data.
+อ่าน guide ใน `node_modules/next/dist/docs/` ก่อนเขียน app code, heed deprecation notices.

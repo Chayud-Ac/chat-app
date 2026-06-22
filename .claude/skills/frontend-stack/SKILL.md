@@ -11,14 +11,14 @@ stack จริงของ AI chat app frontend — encode pattern ที่ re
 - **Next.js 16** (App Router + Turbopack) — server-first
 - **Tailwind CSS v4** — ใช้ `@theme` + design token, ไม่ใช่ config แบบ v3
 - **shadcn/ui + AI Elements** (Vercel official) — primitive สำหรับ chat: conversation, message, code-block, reasoning, tool-call
-- **AI SDK v5** (`ai`, `@ai-sdk/react`) — `useChat` จัดการ chat state
-- **server state: React Query** (TanStack) ถ้าจำเป็น (fetch history, list conversation)
-- **ไม่มี global client store** (Zustand/Redux) — YAGNI; chat state อยู่ที่ `useChat`, server state ที่ React Query พอ
+- **AI SDK v5** (`ai`, `@ai-sdk/react`) — ใช้ UI primitive ได้ แต่ **ไม่ใช้ `useChat` สำหรับ streaming** (ดูเหตุผลข้อ 2 ด้านล่าง)
+- **server state: React Query** (TanStack) — fetch history, list conversation
+- **ไม่มี global client store** (Zustand/Redux) — YAGNI; chat-stream state อยู่ใน local React state, server state ที่ React Query พอ
 
 ## Pattern ที่บังคับ
-1. **Server-first**: default เป็น Server Component; ใส่ `"use client"` เฉพาะที่ต้องการ interactivity/hook (เช่น `useChat`)
-2. **streaming**: ใช้ `useChat` ของ AI SDK v5 render token ทีละ chunk — อย่ารอ response เต็ม
-2b. **state**: chat → `useChat` · server data → React Query · **อย่าเพิ่ม global store** จนกว่าจะมี client state ซับซ้อนจริง (multi-conversation switching, settings)
+1. **Server-first**: default เป็น Server Component; ใส่ `"use client"` เฉพาะที่ต้องการ interactivity/hook (เช่น component ที่อ่าน stream)
+2. **streaming**: backend ส่ง SSE format **ของ repo เอง** (`ChatChunk` = `{type:"delta"|"done"|"error"}` ใน `packages/contracts/chat.ts`) ซึ่ง **ไม่ตรงกับ wire protocol ของ AI SDK `useChat`** → consume ด้วย **hand-rolled `fetch` + `ReadableStream`** (อ่าน `res.body.getReader()`, split `\n\n`, parse `data: <json>` → `ChatChunk`), **ไม่ใช้ `useChat`**. ยัง render token ทีละ chunk — อย่ารอ response เต็ม
+2b. **state**: chat-stream → local React state (`useState`/`useReducer`) · server data → React Query · **อย่าเพิ่ม global store** จนกว่าจะมี client state ซับซ้อนจริง (multi-conversation switching, settings)
 3. **design token**: สี/spacing ใช้ Tailwind v4 `@theme` token เท่านั้น อย่า hardcode hex ใน className
 4. **AI Elements ก่อน**: ใช้ component จาก AI Elements (`<Conversation>`, `<Message>`...) ก่อนเขียน chat UI เอง
 5. **type จาก contract**: request/response import จาก `packages/contracts/` ไม่ duplicate type
