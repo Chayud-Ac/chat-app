@@ -3,14 +3,16 @@ package platform
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Config struct {
-	DatabaseURL     string
-	RedisAddr       string
-	AnthropicAPIKey string
-	AnthropicModel  string
-	Port            string
+	DatabaseURL        string
+	RedisAddr          string
+	AnthropicAPIKey    string
+	AnthropicModel     string
+	Port               string
+	CORSAllowedOrigins []string
 }
 
 func LoadConfig() (*Config, error) {
@@ -36,11 +38,28 @@ func LoadConfig() (*Config, error) {
 	if port == "" {
 		port = "8080"
 	}
+	// CORS_ALLOWED_ORIGINS = comma-separated list. Default = frontend dev server.
+	corsOrigins := []string{"http://localhost:3000"}
+	if v := os.Getenv("CORS_ALLOWED_ORIGINS"); v != "" {
+		corsOrigins = splitAndTrim(v)
+	}
 	return &Config{
-		DatabaseURL:     dbURL,
-		RedisAddr:       redisAddr,
-		AnthropicAPIKey: anthropicKey,
-		AnthropicModel:  anthropicModel,
-		Port:            port,
+		DatabaseURL:        dbURL,
+		RedisAddr:          redisAddr,
+		AnthropicAPIKey:    anthropicKey,
+		AnthropicModel:     anthropicModel,
+		Port:               port,
+		CORSAllowedOrigins: corsOrigins,
 	}, nil
+}
+
+func splitAndTrim(csv string) []string {
+	parts := strings.Split(csv, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
