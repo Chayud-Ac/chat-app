@@ -6,12 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Attachment } from "@/lib/mocks";
 import { getConversation, streamMessage } from "@/lib/api";
 import { conversationsKey } from "@/lib/queries";
-import {
-  MOCK_ATTACHMENTS,
-  MOCK_MODELS,
-  MOCK_SUGGESTED_PROMPTS,
-  MOCK_USER,
-} from "@/lib/mocks";
+import { takePendingMessage } from "@/lib/pending-message";
+import { MOCK_MODELS } from "@/lib/mocks";
 import {
   Conversation,
   ConversationContent,
@@ -34,7 +30,6 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { AttachmentChip } from "@/components/chat/attachment-chip";
 import { ConversationTopbar } from "@/components/layout/conversation-topbar";
-import { MarginaliaEmptyState } from "@/components/chat/empty-state";
 import { MessageError } from "@/components/chat/message-error";
 import { StreamingCaret } from "@/components/chat/streaming-caret";
 import { ThinkingIndicator } from "@/components/chat/thinking-indicator";
@@ -45,13 +40,7 @@ type StreamingTurn = {
   assistantText: string;
 };
 
-export function ChatView({
-  conversationId,
-  initialMessage,
-}: {
-  conversationId: string;
-  initialMessage?: string;
-}) {
+export function ChatView({ conversationId }: { conversationId: string }) {
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["conversation", conversationId],
@@ -62,9 +51,9 @@ export function ChatView({
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [modelId, setModelId] = useState(MOCK_MODELS[0].id);
-  // Mock attachments (no upload backend yet) — seeded so the "with attachment"
-  // composer state is visible; the paperclip re-adds the sample.
-  const [attachments, setAttachments] = useState<Attachment[]>(MOCK_ATTACHMENTS);
+  // No upload backend yet — the composer starts with no attachments. The chip
+  // UI (and removal) still works once real uploads exist.
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   // Remember the last user message so an error can be retried.
   const lastSent = useRef<string | null>(null);
 
@@ -104,19 +93,22 @@ export function ChatView({
     }
   };
 
-  // Fire the first message exactly once when arriving from the first-run screen.
-  // The boolean ref guard defends against React strict-mode double-mount. `send`
-  // is intentionally omitted from deps: it is recreated each render, and this
-  // effect must run only when initialMessage arrives — safe because ChatView is
-  // keyed by conversationId, so it never outlives a single conversation's send.
+  // Arriving from the first-run screen: send the stashed first message exactly
+  // once on mount. The boolean ref guard defends against React strict-mode
+  // double-mount; takePendingMessage is itself one-shot (it clears on read).
+  // `send` is intentionally omitted from deps — it is recreated each render and
+  // this must run only on mount; ChatView is keyed by conversationId so it never
+  // outlives a single conversation.
   const initialSent = useRef(false);
   useEffect(() => {
-    if (initialMessage && !initialSent.current) {
-      initialSent.current = true;
-      void send(initialMessage);
-    }
+    if (initialSent.current) return;
+    initialSent.current = true;
+    const pending = takePendingMessage(conversationId);
+    // Defer out of the effect body so the first setState (inside send) runs
+    // after commit rather than cascading synchronously during the effect.
+    if (pending) queueMicrotask(() => void send(pending));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMessage]);
+  }, [conversationId]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const text = message.text ?? "";
@@ -129,20 +121,17 @@ export function ChatView({
     if (lastSent.current) void send(lastSent.current);
   };
 
-  const isEmpty = !isLoading && !isError && messages.length === 0 && !turn;
   // Before the first delta arrives, show the thinking indicator instead of an empty bubble.
   const isThinking = turn !== null && turn.assistantText.length === 0;
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      {!isEmpty && (
-        <ConversationTopbar
-          title={title}
-          models={MOCK_MODELS}
-          modelId={modelId}
-          onModelChange={setModelId}
-        />
-      )}
+      <ConversationTopbar
+        title={title}
+        models={MOCK_MODELS}
+        modelId={modelId}
+        onModelChange={setModelId}
+      />
 
       <Conversation className="flex-1">
         <ConversationContent className="mx-auto w-full max-w-2xl">
@@ -153,14 +142,6 @@ export function ChatView({
             <p className="text-sm text-destructive">
               Failed to load conversation
             </p>
-          )}
-          {isEmpty && (
-            <MarginaliaEmptyState
-              user={MOCK_USER}
-              prompts={MOCK_SUGGESTED_PROMPTS}
-              greeting="Good evening"
-              onPickPrompt={setDraft}
-            />
           )}
           {messages.map((m) => (
             <Message from={m.role} key={m.id}>
@@ -237,10 +218,7 @@ export function ChatView({
           </PromptInputBody>
           <PromptInputFooter>
             <PromptInputTools>
-              <PromptInputButton
-                aria-label="Attach a file"
-                onClick={() => setAttachments(MOCK_ATTACHMENTS)}
-              >
+              <PromptInputButton aria-label="Attach a file">
                 <Paperclip className="size-4" />
               </PromptInputButton>
               <PromptInputButton aria-label="Formatting">

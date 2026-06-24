@@ -21,12 +21,7 @@ export function MarginaliaEmptyState({
 }: MarginaliaEmptyStateProps) {
   const firstName = user.name.split(" ")[0];
   return (
-    <div
-      className={cn(
-        "flex size-full flex-col items-center justify-center px-6 text-center",
-        className
-      )}
-    >
+    <div className={cn("flex flex-col items-center text-center", className)}>
       <div className="w-full max-w-xl">
         <div className="text-[0.8125rem] font-semibold uppercase tracking-widest text-primary">
           {greeting}, {firstName}
