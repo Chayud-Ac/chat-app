@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sidebar } from "@/components/sidebar";
-import { ChatView } from "@/components/chat-view";
+import { Sidebar } from "@/components/layout/sidebar";
+import { ChatView } from "@/components/chat/chat-view";
 
 export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
