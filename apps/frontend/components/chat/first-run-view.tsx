@@ -30,7 +30,7 @@ export function FirstRunView({ onStart, isStarting, error }: FirstRunViewProps) 
   const handleSubmit = (message: PromptInputMessage) => {
     const text = (message.text ?? "").trim();
     if (!text || isStarting) return;
-    setDraft("");
+    setDraft(""); // controlled textarea: PromptInput's form.reset() can't clear React state
     onStart(text);
   };
 
@@ -61,6 +61,7 @@ export function FirstRunView({ onStart, isStarting, error }: FirstRunViewProps) 
                   <AlignLeft className="size-4" />
                 </PromptInputButton>
               </PromptInputTools>
+              {/* "submitted" = creating the conversation, not yet streaming */}
               <PromptInputSubmit status={isStarting ? "submitted" : "ready"} />
             </PromptInputFooter>
           </PromptInput>
