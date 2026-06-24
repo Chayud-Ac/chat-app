@@ -1,19 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Conversation } from "@contracts/chat";
 import { createConversation } from "@/lib/api";
 import { conversationsKey } from "@/lib/queries";
-import { Sidebar } from "@/components/layout/sidebar";
-import { ChatView } from "@/components/chat/chat-view";
+import { stashPendingMessage } from "@/lib/pending-message";
 import { FirstRunView } from "@/components/chat/first-run-view";
 
 export default function Home() {
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // First message captured on the first-run screen, handed to ChatView on mount.
-  const [pendingMessage, setPendingMessage] = useState<string | undefined>(undefined);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -25,40 +23,23 @@ export default function Home() {
       queryClient.setQueryData<Conversation[]>(conversationsKey, (prev) =>
         prev ? [conv, ...prev] : [conv]
       );
-      setPendingMessage(text);
-      setSelectedId(conv.id);
+      // Carry the first message across the route change; ChatView sends it on mount.
+      stashPendingMessage(conv.id, text);
+      router.push(`/c/${conv.id}`);
     } catch (err) {
       // err.message is PII-safe: only HTTP method, path, and status code.
       console.error("[handleStart]", err instanceof Error ? err.message : err);
       setStartError("Couldn't start a conversation. Please try again.");
-    } finally {
       setIsStarting(false);
     }
-  };
-
-  const handleSelect = (id: string) => {
-    setPendingMessage(undefined); // selecting an existing conversation: nothing to auto-send
-    setSelectedId(id);
+    // On success we navigate away, so isStarting need not be reset.
   };
 
   return (
-    <div className="flex h-screen w-full">
-      <Sidebar selectedId={selectedId} onSelect={handleSelect} />
-      <main className="flex flex-1 flex-col">
-        {selectedId ? (
-          <ChatView
-            key={selectedId}
-            conversationId={selectedId}
-            initialMessage={pendingMessage}
-          />
-        ) : (
-          <FirstRunView
-            onStart={handleStart}
-            isStarting={isStarting}
-            error={startError}
-          />
-        )}
-      </main>
-    </div>
+    <FirstRunView
+      onStart={handleStart}
+      isStarting={isStarting}
+      error={startError}
+    />
   );
 }

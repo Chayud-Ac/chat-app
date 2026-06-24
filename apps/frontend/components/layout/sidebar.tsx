@@ -1,10 +1,9 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useMemo } from "react";
-import type { Conversation } from "@contracts/chat";
-import { createConversation, listConversations } from "@/lib/api";
+import { listConversations } from "@/lib/api";
 import { conversationsKey } from "@/lib/queries";
 import {
   MOCK_GROUPED_CONVERSATIONS,
@@ -22,22 +21,11 @@ export function Sidebar({
   onSelect,
 }: {
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
 }) {
-  const queryClient = useQueryClient();
   const { data: conversations, isLoading, isError } = useQuery({
     queryKey: conversationsKey,
     queryFn: listConversations,
-  });
-
-  const newChat = useMutation({
-    mutationFn: createConversation,
-    onSuccess: (conv) => {
-      queryClient.setQueryData<Conversation[]>(conversationsKey, (prev) =>
-        prev ? [conv, ...prev] : [conv]
-      );
-      onSelect(conv.id);
-    },
   });
 
   // Real conversations get date-grouped; until the backend returns any, show
@@ -57,8 +45,7 @@ export function Sidebar({
       <div className="px-3.5 pb-3">
         <Button
           className="w-full justify-start gap-2"
-          onClick={() => newChat.mutate()}
-          disabled={newChat.isPending}
+          onClick={() => onSelect(null)}
         >
           <Plus className="size-4" />
           New conversation
