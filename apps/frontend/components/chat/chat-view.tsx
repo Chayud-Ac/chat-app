@@ -36,6 +36,7 @@ import { AttachmentChip } from "@/components/chat/attachment-chip";
 import { ConversationTopbar } from "@/components/layout/conversation-topbar";
 import { MarginaliaEmptyState } from "@/components/chat/empty-state";
 import { MessageError } from "@/components/chat/message-error";
+import { StreamingCaret } from "@/components/chat/streaming-caret";
 import { ThinkingIndicator } from "@/components/chat/thinking-indicator";
 
 // The in-flight turn: the user's just-sent message + the streaming assistant text.
@@ -160,10 +161,9 @@ export function ChatView({ conversationId }: { conversationId: string }) {
                   {isThinking ? (
                     <ThinkingIndicator label="Reading your draft…" />
                   ) : (
-                    // Caret hugs the end of the last rendered block.
-                    <div className="[&>*:last-child]:after:ml-0.5 [&>*:last-child]:after:inline-block [&>*:last-child]:after:h-[1.1em] [&>*:last-child]:after:w-0.75 [&>*:last-child]:after:translate-y-0.75 [&>*:last-child]:after:rounded-[1px] [&>*:last-child]:after:bg-primary [&>*:last-child]:after:align-baseline [&>*:last-child]:after:content-[''] motion-safe:[&>*:last-child]:after:animate-[mg-blink_1s_steps(1)_infinite]">
+                    <StreamingCaret>
                       <MessageResponse>{turn.assistantText}</MessageResponse>
-                    </div>
+                    </StreamingCaret>
                   )}
                 </MessageContent>
               </Message>
