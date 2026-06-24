@@ -1,5 +1,5 @@
 ---
-description: รัน test → cross-review (DeepInfra) → เปิด PR ผูกกับ issue. ใช้ $ARGUMENTS เป็น issue number
+description: รัน test → cross-review (Claude subagent context สะอาด) → เปิด PR ผูกกับ issue. ใช้ $ARGUMENTS เป็น issue number
 ---
 
 # /open-pr $ARGUMENTS
@@ -13,7 +13,7 @@ description: รัน test → cross-review (DeepInfra) → เปิด PR ผ
 
 0. **gate ก่อนเริ่ม (กัน runaway loop)** — ดู skill `agent-dev-flow`: ถ้างานนี้ run แบบ background/async ต้องมี `--max-turns` (เริ่ม 20) + retry ต่อ action ≤ 3. ถ้า issue กำกวม/heavy → ไม่ส่ง async, แจ้ง user ให้ทำ interactive แทน
 1. รัน test ของ service ที่กระทบ (ดู command ใน nested CLAUDE.md) — ถ้าไม่ผ่าน **หยุด** แจ้ง user
-2. รัน skill `cross-review` (Claude → DeepInfra loop) จน model approve
+2. รัน skill `cross-review` (Claude subagent context สะอาด loop) จน approve
 3. เปิด PR ผูกกับ issue:
 
 ```bash
@@ -25,7 +25,7 @@ gh pr create \
 <สรุปการเปลี่ยนแปลง + service ที่กระทบ>
 
 ## Cross-review
-✅ reviewed by DeepInfra (loop-until-approved)
+✅ reviewed by clean-context Claude subagent (loop-until-approved)
 " \
   --base main
 ```
