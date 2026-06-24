@@ -157,9 +157,11 @@
 }
 
 /* Streamdown code-block chrome — ensure header bar reads as distinct from code body */
-[data-streamdown="code-block-header"] {
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.5rem;
+@layer base {
+  [data-streamdown="code-block-header"] {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+  }
 }
 
 /* Marginalia motion — calm, never springy (blinking caret, thinking dots, shimmer) */
