@@ -25,20 +25,45 @@ stack จริงของ AI chat app frontend — encode pattern ที่ re
 6. **ห้าม secret ฝั่ง client**: เรียก LLM ผ่าน backend เท่านั้น
 7. **file placement (สำคัญ)**: `app/` = **routing เท่านั้น** (`page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`). **ห้ามวาง reusable component ลอย ๆ ใน `app/`** — shared code อยู่ root-level folders ของ frontend ไม่ใช่ใน `app/`
 
-## โครงไฟล์ (apps/frontend — Next.js App Router convention)
+## file placement — กฎเดียวที่ขับทุกอย่าง: **shared vs. colocated**
+ก่อนวาง component ทุกตัว ถามว่า *ใช้ที่เดียวหรือหลายที่?* (Next.js ไม่บังคับชื่อ folder — นี่คือ de-facto convention ของ ecosystem)
+
+- ใช้ **≥2 route** → shared → `components/`
+- ใช้ **route เดียว** + ไม่ routable → colocate ที่ `app/<route>/_components/` (prefix `_` กัน Next ตีความเป็น route)
+
+ข้างใน `components/` แยกตาม *ชนิดของ shared thing* (ไม่ใช่ atomic design — size ไม่บอก ownership):
+- `components/ui/` — primitive ใบ้ ๆ generic (Button, Input...) = **shadcn convention** (`npx shadcn add` ลงที่นี่, import ผ่าน `@/`)
+- `components/ai-elements/` — AI Elements (generated) — primitive chat เฉพาะ repo นี้
+- `components/common/` — composite ที่ reuse ข้าม ≥2 feature
+- `components/layout/` — app shell (sidebar, topbar, brand) — chrome รอบ ๆ ที่ persist ข้าม route
+
+## โครงไฟล์ (apps/frontend)
 ```
 app/                  # routing เท่านั้น
   layout.tsx          # root layout (providers wrap ที่นี่)
   page.tsx            # route '/'
-  <segment>/page.tsx  # nested route
+  <segment>/
+    page.tsx
+    _components/       # component เฉพาะ route นี้ (ไม่ reuse, ไม่ routable)
 components/
   ui/                 # shadcn primitive (generated)
   ai-elements/        # AI Elements (generated)
-  <feature>.tsx       # reusable component ที่เราเขียนเอง (เช่น sidebar, chat-view)
-lib/                  # api client, utils, ไม่ใช่ React component
+  layout/             # app shell — sidebar, topbar, brand, theme-toggle
+  common/             # composite reuse ข้าม ≥2 feature
+  <feature>.tsx       # feature component เดี่ยว ๆ (เช่น chat-view)
+lib/                  # api client, utils, query keys — ไม่ใช่ React component
 ```
-- component ที่ใช้เฉพาะ route เดียว + ไม่ routable → colocate ได้ด้วย **private folder** `app/<route>/_components/` (prefix `_` กัน Next ตีความเป็น route)
 - provider/shell wiring (React Query, Tooltip) → `components/providers.tsx` แล้ว import ใน `app/layout.tsx`
+- **query key / fetcher / non-component logic → `lib/`** (เช่น `lib/queries.ts`) — อย่า export จากไฟล์ component
+- **ห้ามตั้งชื่อ folder แบบ bucket มั่ว ๆ** (เช่น `marginalia/`, `misc/`) — ใช้ axis ข้างบนเท่านั้น
+
+### promote เป็น feature เมื่อโตพอ
+เมื่อ feature เดียวสะสม component ของตัวเอง **+ hook + action + type** → ยกออกจาก technical layer ไปเป็น `features/<name>/` ที่ own ทุกอย่าง (Feature-Sliced Design):
+```
+features/<name>/
+  components/  hooks/  actions.ts  schema.ts  types.ts
+```
+ตอนนี้ repo ยังเล็ก (1 route) → ยังไม่ต้อง `features/`; อยู่ที่ hybrid (`ui` + `layout` + colocated `_components`) ไปก่อน
 
 ## UI ใหม่ที่ต้องดีไซน์
 ถ้าต้องสร้าง UI/หน้าใหม่ที่ต้องการ design quality → ใช้ built-in skill **frontend-design** ก่อน (กัน generic AI aesthetic) แล้วค่อย map กลับมา stack ข้างบน
