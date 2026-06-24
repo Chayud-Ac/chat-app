@@ -41,4 +41,4 @@ flow: create issue → agent implement → async background → เปิด PR 
 ## เชื่อมกับของที่มี
 - `anti-slop` — ข้อ 1 (ถามก่อนเดา) คือเหตุผลที่ของกำกวมห้ามส่ง async
 - `/open-pr` — quality gate หลัง implement (test → cross-review → PR)
-- `cross-review` — review ด้วย DeepInfra (model คนละ family) ก่อนเปิด PR
+- `cross-review` — review ด้วย Claude subagent ที่ context สะอาด (fresh eyes) ก่อนเปิด PR

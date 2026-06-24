@@ -14,8 +14,7 @@
       "Bash(git diff:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(gh pr create:*)",
-      "Bash(curl -s https://api.deepinfra.com/*)"
+      "Bash(gh pr create:*)"
     ],
     "deny": [
       "Bash(rm -rf:*)",
