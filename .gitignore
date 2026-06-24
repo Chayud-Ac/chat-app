@@ -20,3 +20,6 @@ dist/
 
 # local sqlite
 *.sqlite
+
+# git worktrees for feature isolation
+.claude/worktrees/

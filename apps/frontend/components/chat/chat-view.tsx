@@ -2,7 +2,7 @@
 
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { AlignLeft, Paperclip } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Attachment } from "@/lib/mocks";
 import { getConversation, streamMessage } from "@/lib/api";
 import { conversationsKey } from "@/lib/queries";
@@ -45,7 +45,13 @@ type StreamingTurn = {
   assistantText: string;
 };
 
-export function ChatView({ conversationId }: { conversationId: string }) {
+export function ChatView({
+  conversationId,
+  initialMessage,
+}: {
+  conversationId: string;
+  initialMessage?: string;
+}) {
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["conversation", conversationId],
@@ -97,6 +103,20 @@ export function ChatView({ conversationId }: { conversationId: string }) {
       setTurn(null);
     }
   };
+
+  // Fire the first message exactly once when arriving from the first-run screen.
+  // The boolean ref guard defends against React strict-mode double-mount. `send`
+  // is intentionally omitted from deps: it is recreated each render, and this
+  // effect must run only when initialMessage arrives — safe because ChatView is
+  // keyed by conversationId, so it never outlives a single conversation's send.
+  const initialSent = useRef(false);
+  useEffect(() => {
+    if (initialMessage && !initialSent.current) {
+      initialSent.current = true;
+      void send(initialMessage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const text = message.text ?? "";
@@ -157,6 +177,19 @@ export function ChatView({ conversationId }: { conversationId: string }) {
                 </MessageContent>
               </Message>
               <Message from="assistant">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="text-xs font-semibold tracking-wide text-foreground">
+                    Marginalia
+                  </span>
+                  {!isThinking && (
+                    <span
+                      aria-label="writing"
+                      className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium tracking-wide text-primary"
+                    >
+                      writing…
+                    </span>
+                  )}
+                </div>
                 <MessageContent>
                   {isThinking ? (
                     <ThinkingIndicator label="Reading your draft…" />

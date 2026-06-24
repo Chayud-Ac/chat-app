@@ -156,6 +156,25 @@
   }
 }
 
+/* Streamdown code-block chrome — ensure header bar reads as distinct from code body */
+@layer base {
+  [data-streamdown="code-block-header"] {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Streamdown blockquotes — Marginalia pull-quote treatment */
+@layer base {
+  [data-streamdown="blockquote"] {
+    border-left: 3px solid var(--primary);
+    padding-left: 1rem;
+    font-style: italic;
+    font-family: var(--font-serif);
+    color: var(--muted-foreground);
+  }
+}
+
 /* Marginalia motion — calm, never springy (blinking caret, thinking dots, shimmer) */
 @keyframes mg-blink {
   0%,
