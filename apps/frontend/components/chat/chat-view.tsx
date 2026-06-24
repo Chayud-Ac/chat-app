@@ -105,13 +105,16 @@ export function ChatView({
   };
 
   // Fire the first message exactly once when arriving from the first-run screen.
+  // The boolean ref guard defends against React strict-mode double-mount. `send`
+  // is intentionally omitted from deps: it is recreated each render, and this
+  // effect must run only when initialMessage arrives — safe because ChatView is
+  // keyed by conversationId, so it never outlives a single conversation's send.
   const initialSent = useRef(false);
   useEffect(() => {
     if (initialMessage && !initialSent.current) {
       initialSent.current = true;
       void send(initialMessage);
     }
-    // send is stable enough for this one-shot; deps intentionally minimal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessage]);
 
@@ -179,7 +182,10 @@ export function ChatView({
                     Marginalia
                   </span>
                   {!isThinking && (
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium tracking-wide text-primary">
+                    <span
+                      aria-label="writing"
+                      className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium tracking-wide text-primary"
+                    >
                       writing…
                     </span>
                   )}

@@ -13,7 +13,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // First message captured on the first-run screen, handed to ChatView on mount.
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | undefined>(undefined);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -27,7 +27,9 @@ export default function Home() {
       );
       setPendingMessage(text);
       setSelectedId(conv.id);
-    } catch {
+    } catch (err) {
+      // err.message is PII-safe: only HTTP method, path, and status code.
+      console.error("[handleStart]", err instanceof Error ? err.message : err);
       setStartError("Couldn't start a conversation. Please try again.");
     } finally {
       setIsStarting(false);
@@ -35,7 +37,7 @@ export default function Home() {
   };
 
   const handleSelect = (id: string) => {
-    setPendingMessage(null); // selecting an existing conversation: nothing to auto-send
+    setPendingMessage(undefined); // selecting an existing conversation: nothing to auto-send
     setSelectedId(id);
   };
 
@@ -47,7 +49,7 @@ export default function Home() {
           <ChatView
             key={selectedId}
             conversationId={selectedId}
-            initialMessage={pendingMessage ?? undefined}
+            initialMessage={pendingMessage}
           />
         ) : (
           <FirstRunView
