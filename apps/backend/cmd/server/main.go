@@ -17,6 +17,7 @@ import (
 	"github.com/Chayud-Ac/chat-app/apps/backend/internal/chat"
 	"github.com/Chayud-Ac/chat-app/apps/backend/internal/health"
 	"github.com/Chayud-Ac/chat-app/apps/backend/internal/platform"
+	"github.com/Chayud-Ac/chat-app/apps/backend/internal/platform/httpmw"
 )
 
 func main() {
@@ -25,6 +26,8 @@ func main() {
 		slog.Error("config", "err", err)
 		os.Exit(1)
 	}
+
+	slog.SetDefault(platform.NewLogger(os.Stdout, cfg.LogFormat))
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -47,6 +50,11 @@ func main() {
 	chatSvc := chat.NewService(repo.New(pool), chat.NewAnthropicStreamer(cfg.AnthropicAPIKey, cfg.AnthropicModel))
 
 	r := chi.NewRouter()
+	// ลำดับสำคัญ: RequestLogger ต้องห่อ Recoverer (ไม่ใช่กลับกัน) — panic ใน handler ให้ Recoverer
+	// set 500 บน wrapped writer ก่อน RequestLogger จะ log access line จะได้ขึ้น status 500 ไม่ใช่ 0.
+	r.Use(httpmw.RequestID)
+	r.Use(httpmw.RequestLogger(slog.Default()))
+	r.Use(httpmw.Recoverer(slog.Default()))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: cfg.CORSAllowedOrigins,
 		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},

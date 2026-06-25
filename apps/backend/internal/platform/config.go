@@ -13,6 +13,7 @@ type Config struct {
 	AnthropicModel     string
 	Port               string
 	CORSAllowedOrigins []string
+	LogFormat          string
 }
 
 func LoadConfig() (*Config, error) {
@@ -43,6 +44,11 @@ func LoadConfig() (*Config, error) {
 	if v := os.Getenv("CORS_ALLOWED_ORIGINS"); v != "" {
 		corsOrigins = splitAndTrim(v)
 	}
+	// LOG_FORMAT = "json" (prod, log aggregation) หรือ "text" (default, อ่านง่ายตอน dev).
+	logFormat := os.Getenv("LOG_FORMAT")
+	if logFormat == "" {
+		logFormat = "text"
+	}
 	return &Config{
 		DatabaseURL:        dbURL,
 		RedisAddr:          redisAddr,
@@ -50,6 +56,7 @@ func LoadConfig() (*Config, error) {
 		AnthropicModel:     anthropicModel,
 		Port:               port,
 		CORSAllowedOrigins: corsOrigins,
+		LogFormat:          logFormat,
 	}, nil
 }
 
